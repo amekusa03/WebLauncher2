@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.WebLauncher2">
+
+        <!-- 管理画面 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="WebLauncher2 Admin">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 共通ロジックActivity -->
+        <activity
+            android:name=".SlotRepository"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- Slot 1 -->
+        <activity-alias
+            android:name=".Slot1"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_slot1"
+            android:label="Web①"
+            android:targetActivity=".SlotRepository">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Slot 2 -->
+        <activity-alias
+            android:name=".Slot2"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_slot2"
+            android:label="Web②"
+            android:targetActivity=".SlotRepository">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Slot 3 -->
+        <activity-alias
+            android:name=".Slot3"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_slot3"
+            android:label="Web③"
+            android:targetActivity=".SlotRepository">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Slot 4 -->
+        <activity-alias
+            android:name=".Slot4"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_slot4"
+            android:label="Web④"
+            android:targetActivity=".SlotRepository">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Slot 5 -->
+        <activity-alias
+            android:name=".Slot5"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_slot5"
+            android:label="Web⑤"
+            android:targetActivity=".SlotRepository">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+    </application>
+</manifest>

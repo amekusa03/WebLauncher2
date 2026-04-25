@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 缶の影（立体感用） -->
+    <path
+        android:fillColor="#000000"
+        android:fillAlpha="0.1"
+        android:pathData="M30,35 L30,85 A30,12 0 0 0 90,85 L90,35 A30,12 0 0 0 30,35 Z" />
+    
+    <!-- 缶の胴体（メインカラー: 深みのある緑/お茶の色） -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M24,35 L24,85 A30,12 0 0 0 84,85 L84,35 A30,12 0 0 0 24,35 Z" />
+    
+    <!-- 缶の上面（フタ） -->
+    <path
+        android:fillAlpha="0.3"
+        android:fillColor="#000000"
+        android:pathData="M54,35 m-30,0 a30,12 0 1,1 60,0 a30,12 0 1,1 -60,0" />
+    
+    <!-- フタの縁ライン -->
+    <path
+        android:strokeWidth="1.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeAlpha="0.4"
+        android:pathData="M54,35 m-30,0 a30,12 0 1,1 60,0 a30,12 0 1,1 -60,0" />
+
+    <!-- 缶のハイライト -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.1"
+        android:pathData="M30,35 L35,35 L35,85 L30,85 Z" />
+</vector>
