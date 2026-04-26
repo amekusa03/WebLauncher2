@@ -1,4 +1,4 @@
-package com.kusa.weblauncher2.import
+package com.kusa.weblauncher2
 
 import com.kusa.weblauncher2.MainActivity
 import android.content.Intent
