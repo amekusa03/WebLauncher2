@@ -4,6 +4,7 @@
     <option name="MigrateToGradleLocalJavaHome">
       <set>
         <option value="/media/data/Users/ame/document/AndroidStudioProjects/WebLauncher2" />
+        <option value="$PROJECT_DIR$" />
       </set>
     </option>
   </component>

@@ -12,93 +12,72 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WebLauncher2">
 
-        <!-- 管理画面 -->
+        <!-- 管理画面（ドロアにはこれだけ表示） -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="WebLauncher2 Admin">
+            android:label="あわ茶 設定">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- 共通ロジックActivity -->
+        <!-- ★singleInstance削除済み -->
         <activity
-            android:name=".SlotRepository"
+            android:name=".SlotLauncherActivity"
             android:exported="true"
-            android:launchMode="singleInstance"
-            android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
-        <!-- Slot 1 -->
+        <!--
+            ★バグ①修正: intent-filter を削除してドロアから非表示にする
+            　　　　　　 exported=true は維持（ショートカットから起動するため）
+            　　　　　　 ★スロットキーを action の extra で渡す方式に変更
+        -->
         <activity-alias
             android:name=".Slot1"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/ic_launcher_slot1"
-            android:label="Web①"
-            android:targetActivity=".SlotRepository">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:icon="@mipmap/ic_launcher"
+            android:label="Slot 1"
+            android:targetActivity=".SlotLauncherActivity">
         </activity-alias>
 
-        <!-- Slot 2 -->
         <activity-alias
             android:name=".Slot2"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/ic_launcher_slot2"
-            android:label="Web②"
-            android:targetActivity=".SlotRepository">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:icon="@mipmap/ic_launcher"
+            android:label="Slot 2"
+            android:targetActivity=".SlotLauncherActivity">
         </activity-alias>
 
-        <!-- Slot 3 -->
         <activity-alias
             android:name=".Slot3"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/ic_launcher_slot3"
-            android:label="Web③"
-            android:targetActivity=".SlotRepository">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:icon="@mipmap/ic_launcher"
+            android:label="Slot 3"
+            android:targetActivity=".SlotLauncherActivity">
         </activity-alias>
 
-        <!-- Slot 4 -->
         <activity-alias
             android:name=".Slot4"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/ic_launcher_slot4"
-            android:label="Web④"
-            android:targetActivity=".SlotRepository">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:icon="@mipmap/ic_launcher"
+            android:label="Slot 4"
+            android:targetActivity=".SlotLauncherActivity">
         </activity-alias>
 
-        <!-- Slot 5 -->
         <activity-alias
             android:name=".Slot5"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/ic_launcher_slot5"
-            android:label="Web⑤"
-            android:targetActivity=".SlotRepository">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:icon="@mipmap/ic_launcher"
+            android:label="Slot 5"
+            android:targetActivity=".SlotLauncherActivity">
         </activity-alias>
+
     </application>
 </manifest>

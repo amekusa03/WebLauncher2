@@ -13,7 +13,7 @@ data class SlotInfo(
     val label: String = "",     // 表示名
     val url: String = "",       // URL  サブリンクなしの時は””
     val iconColor: String = "#808080",  // グレー
-    val IsSublink: Boolean = false,          // サビリンクあり
+    val isSublink: Boolean = false,          // サブリンクあり
     val useCustomTabs: Boolean = true        // カスタムタブ使用する。
 )
 

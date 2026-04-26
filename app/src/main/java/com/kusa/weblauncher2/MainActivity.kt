@@ -1,11 +1,15 @@
 package com.kusa.weblauncher2
 
 import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.browser.customtabs.CustomTabColorSchemeParams
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,11 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.graphics.Color
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import com.kusa.weblauncher2.data.SlotInfo
 import com.kusa.weblauncher2.data.SlotRepository
@@ -37,9 +38,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         val initialSlot = intent.getStringExtra("TARGET_SLOT")
-
         enableEdgeToEdge()
         setContent {
             WebLauncher2Theme {
@@ -50,70 +49,66 @@ class MainActivity : ComponentActivity() {
                     SlotManagerScreen(
                         repository = repository,
                         initialSlot = initialSlot,
-                        onUpdateAlias = { slotKey, enabled ->
-                            updateAliasEnabled(slotKey, enabled)
-                        }
+                        onLaunchUrl = { info -> launchBrowser(info) },
+                        onUpdateAlias = { slotKey, enabled -> updateAliasEnabled(slotKey, enabled) }
                     )
                 }
             }
         }
     }
 
-    private fun updateAliasEnabled(slotKey: String, enabled: Boolean) {
-        val aliasName = slotKey.replace("slot_", "Slot").replaceFirstChar { it.uppercase() }
-        val componentName = ComponentName(packageName, "$packageName.$aliasName")
-
-        val newState = if (enabled) {
-            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-        } else {
-            PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-        }
-
+    // ★URL起動はActivityのコンテキストで行う
+    private fun launchBrowser(info: SlotInfo) {
         try {
-            packageManager.setComponentEnabledSetting(
-                componentName,
-                newState,
-                0 
-            )
+            val colorInt = try {
+                android.graphics.Color.parseColor(info.iconColor)
+            } catch (e: Exception) { android.graphics.Color.BLUE }
+
+            val colorParams = CustomTabColorSchemeParams.Builder()
+                .setToolbarColor(colorInt)
+                .build()
+            val customTabsIntent = CustomTabsIntent.Builder()
+                .setDefaultColorSchemeParams(colorParams)
+                .setShowTitle(true)
+                .build()
+            customTabsIntent.launchUrl(this, Uri.parse(info.url))
+            // 仕様：ブラウザ起動後にアプリを終了
+            finish()
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
-}
 
-fun formatSlotDisplayName(slotKey: String): String {
-    return when (slotKey) {
-        "slot_1" -> "Web①"
-        "slot_2" -> "Web②"
-        "slot_3" -> "Web③"
-        "slot_4" -> "Web④"
-        "slot_5" -> "Web⑤"
-        else -> slotKey
+    private fun updateAliasEnabled(slotKey: String, enabled: Boolean) {
+        val aliasName = slotKey.replace("slot_", "Slot").replaceFirstChar { it.uppercase() }
+        val componentName = ComponentName(packageName, "$packageName.$aliasName")
+        val newState = if (enabled) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                       else        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        try {
+            packageManager.setComponentEnabledSetting(componentName, newState, 0)
+        } catch (e: Exception) { e.printStackTrace() }
     }
 }
 
-// ... 既存のimportは維持 ...
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SlotManagerScreen(
     repository: SlotRepository,
     initialSlot: String?,
+    onLaunchUrl: (SlotInfo) -> Unit,
     onUpdateAlias: (String, Boolean) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    // 階層管理用の状態
     var currentParentId by remember { mutableStateOf("root") }
-    val slots = listOf("1", "2", "3", "4", "5") // 各階層に5つの枠
+    val slotIndices = listOf(0, 1, 2, 3, 4)
     var selectedSlot by remember { mutableStateOf<String?>(null) }
-
-    // TODO: repository.getSlotsByParent(currentParentId) のような形式でデータを取得するように変更する
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🍵", fontSize = 24.sp) // お湯呑み
+                        Text("🍵", fontSize = 24.sp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("あわ茶", fontWeight = FontWeight.Bold)
                     }
@@ -130,49 +125,62 @@ fun SlotManagerScreen(
                 .padding(padding)
                 .background(androidx.compose.ui.graphics.Color(0xFFF5F5F0))
         ) {
-            // --- パンくずリスト（階層表示）エリア ---
+            // パンくずリスト
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // ルート（あわ茶）アイコン
-                Text("🍵", modifier = Modifier.clickable { currentParentId = "root" })
-
-                // 階層がある場合にアイコンを並べる（モック）
+                Text(
+                    "🍵",
+                    modifier = Modifier.clickable { currentParentId = "root" },
+                    fontWeight = if (currentParentId == "root") FontWeight.Bold else FontWeight.Normal
+                )
                 if (currentParentId != "root") {
                     Text(" ＞ ")
-                    // ここに親階層のアイコンを並べる
-                    Text("📄 現在の階層名", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "階層: $currentParentId",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    TextButton(onClick = {
+                        val parent = currentParentId.substringBeforeLast("_", "root")
+                        currentParentId = parent
+                    }) { Text("戻る") }
                 }
             }
 
-            // --- 5つのスロット表示 ---
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(slots) { index ->
-                    // 枠のID（例: root_1, sub1_2 など）
+                items(slotIndices) { index ->
                     val slotKey = "${currentParentId}_$index"
-                    val info by repository.getSlotInfo(slotKey).collectAsState(initial = SlotInfo())
+                    val info by remember(slotKey) {
+                        repository.getSlotInfo(slotKey)
+                    }.collectAsState(initial = SlotInfo())
 
                     SlotItemRow(
                         info = info,
-                        index = index.toInt(),
+                        index = index,
                         onClick = {
-                            if (info?.url?.isNotEmpty() == true) {
-                                // URL起動処理
-                            } else if (info?.IsSublink == true) {
-                                // サブ画面へ移動
-                                // currentParentId = slotKey
-                            } else {
-                                // 未登録：編集画面へ
-                                selectedSlot = slotKey
+                            when {
+                                // サブリンク → 階層を下りる
+                                info.isSublink -> {
+                                    currentParentId = slotKey
+                                }
+                                // ★URL登録済み → ブラウザで開く（仕様通り）
+                                info.url.isNotEmpty() -> {
+                                    onLaunchUrl(info)
+                                }
+                                // 未登録 → 編集画面
+                                else -> {
+                                    selectedSlot = slotKey
+                                }
                             }
                         },
+                        // 長押し → 常に編集画面
                         onLongClick = { selectedSlot = slotKey }
                     )
                 }
@@ -180,17 +188,20 @@ fun SlotManagerScreen(
         }
     }
 
-    // 編集ダイアログ（既存のEditSlotDialogを流用、ただし「種別」の選択肢を追加が必要）
+    // 編集ダイアログ
     if (selectedSlot != null) {
         val slotKey = selectedSlot!!
-        val currentInfo by repository.getSlotInfo(slotKey).collectAsState(initial = null)
+        val currentInfo by remember(slotKey) {
+            repository.getSlotInfo(slotKey)
+        }.collectAsState(initial = null)
+
         EditSlotDialog(
             slotKey = slotKey,
-            initialInfo = currentInfo ?: SlotInfo(),
+            initialInfo = currentInfo,
             onDismiss = { selectedSlot = null },
-            onSave = { newInfo ->
+            onSave = { updateInfo ->
                 scope.launch {
-                    repository.saveSlotInfo(slotKey, newInfo)
+                    repository.saveSlotInfo(slotKey, updateInfo)
                     selectedSlot = null
                 }
             }
@@ -212,10 +223,7 @@ fun SlotItemRow(
             .fillMaxWidth()
             .height(80.dp)
             .clip(RoundedCornerShape(12.dp))
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            ),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         color = androidx.compose.ui.graphics.Color.White,
         shadowElevation = 2.dp
     ) {
@@ -223,7 +231,6 @@ fun SlotItemRow(
             modifier = Modifier.padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // アイコン部分（16色 or ＋）
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -231,12 +238,8 @@ fun SlotItemRow(
                     .background(
                         if (isRegistered) {
                             val colorInt = try {
-                            //    Color.parseColor(info?.iconColor)
                                 android.graphics.Color.parseColor(info?.iconColor ?: "#808080")
-                            } catch (e: Exception) {
-                                //Color.GRAY
-                                android.graphics.Color.GRAY
-                            }
+                            } catch (e: Exception) { android.graphics.Color.GRAY }
                             androidx.compose.ui.graphics.Color(colorInt)
                         } else {
                             androidx.compose.ui.graphics.Color.LightGray
@@ -245,12 +248,8 @@ fun SlotItemRow(
                 contentAlignment = Alignment.Center
             ) {
                 if (isRegistered) {
-                    Text(
-                        info?.label?.take(1) ?: "",
-                        color = androidx.compose.ui.graphics.Color.White
-                    )
+                    Text(info?.label?.take(1) ?: "", color = androidx.compose.ui.graphics.Color.White)
                 } else {
-                    //Icon(Icons.Default.Add, contentDescription = null)
                     Icon(imageVector = Icons.Default.Add, contentDescription = null)
                 }
             }
@@ -262,65 +261,15 @@ fun SlotItemRow(
                     text = if (isRegistered) info!!.label else "未登録 (${index + 1})",
                     style = MaterialTheme.typography.titleMedium
                 )
-                if (isRegistered && info?.url?.isNotEmpty() == true) {
-                    Text(
-                        info.url,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = androidx.compose.ui.graphics.Color.Gray
-                    )
+                when {
+                    isRegistered && info?.isSublink == true ->
+                        Text("📁 サブ画面", style = MaterialTheme.typography.bodySmall,
+                            color = androidx.compose.ui.graphics.Color.Gray)
+                    isRegistered && info?.url?.isNotEmpty() == true ->
+                        Text(info.url, style = MaterialTheme.typography.bodySmall,
+                            color = androidx.compose.ui.graphics.Color.Gray)
                 }
             }
         }
     }
-}
-
-@Composable
-fun EditSlotDialog(
-    slotKey: String,
-    initialInfo: SlotInfo,
-    onDismiss: () -> Unit,
-    onSave: (SlotInfo) -> Unit
-) {
-    var label by remember { mutableStateOf(initialInfo.label) }
-    var url by remember { mutableStateOf(initialInfo.url) }
-    var iconColor by remember { mutableStateOf(initialInfo.iconColor.ifEmpty { "#808080" }) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("スロット編集") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(
-                    value = label,
-                    onValueChange = { label = it },
-                    label = { Text("名前 (ラベル)") },
-                    singleLine = true
-                )
-                TextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    label = { Text("URL") },
-                    singleLine = true
-                )
-                Text("アイコン色 (HEX):", style = MaterialTheme.typography.bodySmall)
-                TextField(
-                    value = iconColor,
-                    onValueChange = { iconColor = it },
-                    placeholder = { Text("#RRGGBB") }
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                onSave(initialInfo.copy(label = label, url = url, iconColor = iconColor))
-            }) {
-                Text("保存")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("キャンセル")
-            }
-        }
-    )
 }
