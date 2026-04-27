@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- ★ファビコン取得に必須 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -23,25 +26,20 @@
             </intent-filter>
         </activity>
 
-        <!-- ★singleInstance削除済み -->
+        <!-- ★singleInstance・taskAffinity削除済み -->
         <activity
             android:name=".SlotLauncherActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
-        <!--
-            ★バグ①修正: intent-filter を削除してドロアから非表示にする
-            　　　　　　 exported=true は維持（ショートカットから起動するため）
-            　　　　　　 ★スロットキーを action の extra で渡す方式に変更
-        -->
+        <!-- ★intent-filter削除でドロアから非表示 -->
         <activity-alias
             android:name=".Slot1"
             android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="Slot 1"
-            android:targetActivity=".SlotLauncherActivity">
-        </activity-alias>
+            android:targetActivity=".SlotLauncherActivity" />
 
         <activity-alias
             android:name=".Slot2"
@@ -49,8 +47,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="Slot 2"
-            android:targetActivity=".SlotLauncherActivity">
-        </activity-alias>
+            android:targetActivity=".SlotLauncherActivity" />
 
         <activity-alias
             android:name=".Slot3"
@@ -58,8 +55,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="Slot 3"
-            android:targetActivity=".SlotLauncherActivity">
-        </activity-alias>
+            android:targetActivity=".SlotLauncherActivity" />
 
         <activity-alias
             android:name=".Slot4"
@@ -67,8 +63,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="Slot 4"
-            android:targetActivity=".SlotLauncherActivity">
-        </activity-alias>
+            android:targetActivity=".SlotLauncherActivity" />
 
         <activity-alias
             android:name=".Slot5"
@@ -76,8 +71,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="Slot 5"
-            android:targetActivity=".SlotLauncherActivity">
-        </activity-alias>
+            android:targetActivity=".SlotLauncherActivity" />
 
     </application>
 </manifest>
