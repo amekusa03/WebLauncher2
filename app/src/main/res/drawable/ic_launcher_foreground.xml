@@ -4,33 +4,52 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 缶の影（立体感用） -->
-    <path
-        android:fillColor="#000000"
-        android:fillAlpha="0.1"
-        android:pathData="M30,35 L30,85 A30,12 0 0 0 90,85 L90,35 A30,12 0 0 0 30,35 Z" />
-    
-    <!-- 缶の胴体（メインカラー: 深みのある緑/お茶の色） -->
-    <path
-        android:fillColor="#2E7D32"
-        android:pathData="M24,35 L24,85 A30,12 0 0 0 84,85 L84,35 A30,12 0 0 0 24,35 Z" />
-    
-    <!-- 缶の上面（フタ） -->
-    <path
-        android:fillAlpha="0.3"
-        android:fillColor="#000000"
-        android:pathData="M54,35 m-30,0 a30,12 0 1,1 60,0 a30,12 0 1,1 -60,0" />
-    
-    <!-- フタの縁ライン -->
-    <path
-        android:strokeWidth="1.5"
-        android:strokeColor="#FFFFFF"
-        android:strokeAlpha="0.4"
-        android:pathData="M54,35 m-30,0 a30,12 0 1,1 60,0 a30,12 0 1,1 -60,0" />
 
-    <!-- 缶のハイライト -->
+    <!-- メインの大きなシャボン玉（中央） -->
+    <!-- 薄い緑色の透過塗りつぶし -->
+    <path
+        android:fillColor="#81C784"
+        android:fillAlpha="0.4"
+        android:pathData="M54,54m-35,0a35,35 0 1,1 70,0a35,35 0 1,1 -70,0" />
+    <!-- シャボン玉の輪郭線 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.8"
+        android:strokeAlpha="0.6"
+        android:pathData="M54,54m-35,0a35,35 0 1,1 70,0a35,35 0 1,1 -70,0" />
+
+    <!-- 右上の小さなシャボン玉 -->
+    <path
+        android:fillColor="#A5D6A7"
+        android:fillAlpha="0.5"
+        android:pathData="M78,38m-15,0a15,15 0 1,1 30,0a15,15 0 1,1 -30,0" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.5"
+        android:pathData="M78,38m-15,0a15,15 0 1,1 30,0a15,15 0 1,1 -30,0" />
+
+    <!-- 左下の小さなシャボン玉 -->
+    <path
+        android:fillColor="#C8E6C9"
+        android:fillAlpha="0.4"
+        android:pathData="M35,70m-10,0a10,10 0 1,1 20,0a10,10 0 1,1 -20,0" />
+
+    <!-- ハイライト（光の反射：白） -->
+    <!-- メインの玉のハイライト（左上） -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.1"
-        android:pathData="M30,35 L35,35 L35,85 L30,85 Z" />
+        android:fillAlpha="0.5"
+        android:pathData="M38,40c2,-5 8,-8 14,-8c-8,0 -16,6 -16,14c0,3 1,6 2,8c-1,-4 0,-10 0,-14z" />
+
+    <!-- 反射する小さな光の点 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.7"
+        android:pathData="M65,70a3,3 0 1,1 6,0a3,3 0 1,1 -6,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6"
+        android:pathData="M82,32a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+
 </vector>
