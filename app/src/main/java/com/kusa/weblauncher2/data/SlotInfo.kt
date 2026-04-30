@@ -19,22 +19,23 @@ data class SlotInfo(
     val isSublink: Boolean = false,
     val useCustomTabs: Boolean = true,
     val iconType: IconType = IconType.COLOR,
-    val iconBase64: String = ""              // ★Base64エンコードされたPNG画像
+    val iconBase64: String = ""
 )
 
 enum class IconType {
-    COLOR,   // 色＋先頭文字で自動生成
-    FAVICON  // ファビコン画像
+    COLOR,
+    FAVICON
 }
 
 val Context.dataStore by preferencesDataStore(name = "slots_config")
 
-class SlotRepository(private val context: Context) {
+class SlotRepository(context: Context) {
+    private val appContext = context.applicationContext
     private val gson = Gson()
 
     fun getSlotInfo(slotKey: String): Flow<SlotInfo> {
         val prefKey = stringPreferencesKey(slotKey)
-        return context.dataStore.data.map { preferences ->
+        return appContext.dataStore.data.map { preferences ->
             val json = preferences[prefKey]
             if (json != null) {
                 try { gson.fromJson(json, SlotInfo::class.java) } catch (e: Exception) { SlotInfo() }
@@ -44,28 +45,48 @@ class SlotRepository(private val context: Context) {
         }
     }
 
+    fun getSlotsUnder(parentId: String): Flow<List<Pair<String, SlotInfo>>> {
+        return appContext.dataStore.data.map { preferences ->
+            (0..4).map { i ->
+                val key = "${parentId}_$i"
+                val json = preferences[stringPreferencesKey(key)]
+                val info = if (json != null) {
+                    try { gson.fromJson(json, SlotInfo::class.java) } catch (e: Exception) { SlotInfo() }
+                } else SlotInfo()
+                key to info
+            }
+        }
+    }
+
     suspend fun saveSlotInfo(slotKey: String, info: SlotInfo) {
         val prefKey = stringPreferencesKey(slotKey)
-        context.dataStore.edit { preferences ->
+        appContext.dataStore.edit { preferences ->
             preferences[prefKey] = gson.toJson(info)
         }
     }
 
     suspend fun deleteSlotInfo(slotKey: String) {
         val prefKey = stringPreferencesKey(slotKey)
-        context.dataStore.edit { preferences ->
+        appContext.dataStore.edit { preferences ->
             preferences.remove(prefKey)
         }
     }
 
-    /** BitmapをBase64文字列に変換 */
+    suspend fun deleteSlotRecursive(slotKey: String) {
+        appContext.dataStore.edit { preferences ->
+            preferences.asMap().keys
+                .filter { it.name == slotKey || it.name.startsWith("${slotKey}_") }
+                .map { stringPreferencesKey(it.name) }
+                .forEach { preferences.remove(it) }
+        }
+    }
+
     fun bitmapToBase64(bitmap: Bitmap): String {
         val baos = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
         return Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT)
     }
 
-    /** Base64文字列をBitmapに変換 */
     fun base64ToBitmap(base64: String): Bitmap? {
         if (base64.isEmpty()) return null
         return try {

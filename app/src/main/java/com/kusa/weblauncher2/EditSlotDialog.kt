@@ -38,7 +38,6 @@ private val colorPalette = listOf(
     "#FFEB3B", "#FFC107", "#FF9800", "#FF5722"
 )
 
-/** 色＋先頭文字でBitmapを生成（144px） */
 private fun makeColorIconBitmap(label: String, colorHex: String): Bitmap {
     val size = 144
     val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
@@ -56,7 +55,6 @@ private fun makeColorIconBitmap(label: String, colorHex: String): Bitmap {
     return bitmap
 }
 
-/** URLからファビコンBitmapを取得（★10秒タイムアウト） */
 private suspend fun fetchFavicon(pageUrl: String): Bitmap? = withContext(Dispatchers.IO) {
     withTimeoutOrNull(10_000L) {
         try {
@@ -75,31 +73,69 @@ fun EditSlotDialog(
     repository: SlotRepository,
     currentDepth: Int,
     onDismiss: () -> Unit,
-    onSave: (SlotInfo) -> Unit
+    onSave: (SlotInfo) -> Unit,
+    onDelete: () -> Unit
 ) {
     if (initialInfo == null) return
 
     val scope = rememberCoroutineScope()
+    val isExistingSlot = initialInfo.label.isNotEmpty()
 
     var label     by remember(slotKey) { mutableStateOf(initialInfo.label) }
     var url       by remember(slotKey) { mutableStateOf(initialInfo.url) }
     var isSublink by remember(slotKey) { mutableStateOf(initialInfo.isSublink) }
     var iconColor by remember(slotKey) { mutableStateOf(initialInfo.iconColor.ifEmpty { "#808080" }) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // null=未選択, COLOR=色選択中, FAVICON=ファビコン選択中
     var selectedIconType  by remember(slotKey) { mutableStateOf<IconType?>(
         if (initialInfo.iconBase64.isEmpty()) null else initialInfo.iconType
     )}
     var previewBitmap     by remember(slotKey) { mutableStateOf<Bitmap?>(null) }
     var isFetchingFavicon by remember { mutableStateOf(false) }
 
-    // 既存アイコンのプレビュー復元
+    val parentId = remember(slotKey) { slotKey.substringBeforeLast("_") }
+    val siblings by remember(parentId) {
+        repository.getSlotsUnder(parentId)
+    }.collectAsState(initial = emptyList())
+
+    val urlError = remember(url, isSublink) {
+        if (!isSublink && url.isNotEmpty() &&
+            !url.startsWith("http://") && !url.startsWith("https://"))
+            "http:// または https:// で始まるURLを入力してください"
+        else null
+    }
+
+    val isDuplicateName = remember(label, siblings) {
+        label.trim().isNotEmpty() &&
+        siblings.any { (key, info) -> key != slotKey && info.label.trim() == label.trim() }
+    }
+
     LaunchedEffect(slotKey) {
         if (initialInfo.iconBase64.isNotEmpty()) {
             previewBitmap = withContext(Dispatchers.IO) {
                 repository.base64ToBitmap(initialInfo.iconBase64)
             }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("サブ画面の削除") },
+            text = { Text("このサブ画面と配下の登録がすべて削除されます。よろしいですか？") },
+            confirmButton = {
+                Button(
+                    onClick = { onDelete() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD32F2F)
+                    )
+                ) { Text("削除") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("キャンセル") }
+            }
+        )
+        return
     }
 
     AlertDialog(
@@ -110,16 +146,22 @@ fun EditSlotDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // 名前
                 TextField(
                     value = label,
-                    onValueChange = { label = it },
+                    onValueChange = { if (it.length <= 64) label = it },
                     label = { Text("表示名") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = isDuplicateName
                 )
+                if (isDuplicateName) {
+                    Text(
+                        "同じ階層に同じ名前が既に存在します",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
 
-                // 種別（4階層目はサブリンク不可）
                 if (currentDepth < 4) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -136,20 +178,25 @@ fun EditSlotDialog(
                     )
                 }
 
-                // URL（サブリンク時はアイコン取得用として任意）
                 TextField(
                     value = url,
                     onValueChange = { url = it },
                     label = { Text(if (isSublink) "アイコン取得用URL（任意）" else "URL") },
                     placeholder = { Text("https://...") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = urlError != null
                 )
+                if (urlError != null) {
+                    Text(
+                        urlError,
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
 
-                // ─── アイコン選択 ───
                 Text("アイコン", style = MaterialTheme.typography.labelMedium)
 
-                // 自動取得ボタン（パレット先頭）
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -171,7 +218,6 @@ fun EditSlotDialog(
                                             previewBitmap = bmp
                                             selectedIconType = IconType.FAVICON
                                         } else {
-                                            // タイムアウト or 失敗 → 未選択に戻す
                                             selectedIconType = null
                                             previewBitmap = null
                                         }
@@ -198,7 +244,6 @@ fun EditSlotDialog(
                     Text("自動取得（URLのファビコン）", style = MaterialTheme.typography.bodySmall)
                 }
 
-                // 16色パレット
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(4),
                     modifier = Modifier.height(160.dp),
@@ -222,7 +267,6 @@ fun EditSlotDialog(
                                 .clickable {
                                     iconColor = colorHex
                                     selectedIconType = IconType.COLOR
-                                    // 色選択時にプレビュー更新
                                     previewBitmap = makeColorIconBitmap(label.ifEmpty { "?" }, colorHex)
                                 }
                         )
@@ -234,7 +278,6 @@ fun EditSlotDialog(
             Button(
                 onClick = {
                     scope.launch {
-                        // アイコンをBase64に変換して保存
                         val (finalIconType, finalBase64) = when (selectedIconType) {
                             IconType.FAVICON -> {
                                 val bmp = previewBitmap
@@ -247,7 +290,6 @@ fun EditSlotDialog(
                             }
                             else -> IconType.COLOR to ""
                         }
-
                         val newInfo = initialInfo.copy(
                             label = label,
                             url = url,
@@ -260,13 +302,28 @@ fun EditSlotDialog(
                         onDismiss()
                     }
                 },
-                enabled = label.isNotEmpty() && !isFetchingFavicon
+                enabled = label.trim().isNotEmpty() && !isFetchingFavicon &&
+                          urlError == null && !isDuplicateName
             ) {
                 Text("保存")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isExistingSlot) {
+                    TextButton(
+                        onClick = {
+                            if (initialInfo.isSublink) showDeleteConfirm = true
+                            else onDelete()
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFFD32F2F)
+                        )
+                    ) { Text("削除") }
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                TextButton(onClick = onDismiss) { Text("キャンセル") }
+            }
         }
     )
 }

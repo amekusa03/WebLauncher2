@@ -1,14 +1,9 @@
 package com.kusa.weblauncher2
 
-import android.content.ComponentName
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.browser.customtabs.CustomTabColorSchemeParams
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,37 +47,11 @@ class MainActivity : ComponentActivity() {
                     SlotManagerScreen(
                         repository = repository,
                         initialSlot = initialSlot,
-                        onLaunchUrl = { info -> launchBrowser(info) },
-                        onUpdateAlias = { slotKey, enabled -> updateAliasEnabled(slotKey, enabled) }
+                        onLaunchUrl = { info -> launchWithCustomTabs(info) }
                     )
                 }
             }
         }
-    }
-
-    private fun launchBrowser(info: SlotInfo) {
-        try {
-            val colorInt = try {
-                android.graphics.Color.parseColor(info.iconColor)
-            } catch (e: Exception) { android.graphics.Color.BLUE }
-            val colorParams = CustomTabColorSchemeParams.Builder().setToolbarColor(colorInt).build()
-            val customTabsIntent = CustomTabsIntent.Builder()
-                .setDefaultColorSchemeParams(colorParams)
-                .setShowTitle(true)
-                .build()
-            customTabsIntent.launchUrl(this, Uri.parse(info.url))
-            finish()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun updateAliasEnabled(slotKey: String, enabled: Boolean) {
-        val aliasName = slotKey.replace("slot_", "Slot").replaceFirstChar { it.uppercase() }
-        val componentName = ComponentName(packageName, "$packageName.$aliasName")
-        val newState = if (enabled) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                       else        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-        try {
-            packageManager.setComponentEnabledSetting(componentName, newState, 0)
-        } catch (e: Exception) { e.printStackTrace() }
     }
 }
 
@@ -94,16 +63,10 @@ fun depthOf(parentId: String): Int =
 fun SlotManagerScreen(
     repository: SlotRepository,
     initialSlot: String?,
-    onLaunchUrl: (SlotInfo) -> Unit,
-    onUpdateAlias: (String, Boolean) -> Unit
+    onLaunchUrl: (SlotInfo) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-
-    // ★チューニング3: rememberSaveable ではなく remember を使い、
-    //   かつ Activity の FLAG_ACTIVITY_CLEAR_TOP と合わせることで
-    //   アプリ再起動（タスク再生成）時は常に "root" から始まる
-    var currentParentId by remember { mutableStateOf("root") }
-
+    var currentParentId by remember { mutableStateOf(initialSlot ?: "root") }
     val slotIndices = listOf(0, 1, 2, 3, 4)
     var selectedSlot by remember { mutableStateOf<String?>(null) }
     val currentDepth = depthOf(currentParentId)
@@ -130,7 +93,6 @@ fun SlotManagerScreen(
                 .padding(padding)
                 .background(androidx.compose.ui.graphics.Color(0xFFF5F5F0))
         ) {
-            // ★チューニング2: パンくず縦横2倍（高さ64dp・文字32sp）
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -145,18 +107,22 @@ fun SlotManagerScreen(
                     modifier = Modifier.clickable { currentParentId = "root" }
                 )
                 if (currentParentId != "root") {
-                    var buildPath = "root"
-                    currentParentId.split("_").drop(1).forEach { part ->
-                        buildPath = "${buildPath}_$part"
-                        val pathSnapshot = buildPath
-                        val isLast = (pathSnapshot == currentParentId)
+                    val breadcrumbKeys = remember(currentParentId) {
+                        buildList {
+                            var path = "root"
+                            currentParentId.split("_").drop(1).forEach { part ->
+                                path = "${path}_$part"
+                                add(path)
+                            }
+                        }
+                    }
+                    breadcrumbKeys.forEach { key ->
                         Text(" ＞ ", fontSize = 20.sp, color = androidx.compose.ui.graphics.Color.Gray)
-                        Text(
-                            text = part,
-                            fontSize = 20.sp,
-                            fontWeight = if (isLast) FontWeight.Bold else FontWeight.Normal,
-                            modifier = if (!isLast) Modifier.clickable { currentParentId = pathSnapshot }
-                                       else Modifier
+                        BreadcrumbLabel(
+                            slotKey = key,
+                            repository = repository,
+                            isLast = key == currentParentId,
+                            onClick = { currentParentId = key }
                         )
                     }
                     Spacer(modifier = Modifier.weight(1f))
@@ -185,7 +151,6 @@ fun SlotManagerScreen(
                         repository = repository,
                         onClick = {
                             when {
-                                // ★不具合1: 4階層制限
                                 info.isSublink -> if (currentDepth < 4) currentParentId = slotKey
                                 info.url.isNotEmpty() -> onLaunchUrl(info)
                                 else -> selectedSlot = slotKey
@@ -215,9 +180,31 @@ fun SlotManagerScreen(
                     repository.saveSlotInfo(slotKey, updateInfo)
                     selectedSlot = null
                 }
+            },
+            onDelete = {
+                scope.launch {
+                    repository.deleteSlotRecursive(slotKey)
+                    selectedSlot = null
+                }
             }
         )
     }
+}
+
+@Composable
+private fun BreadcrumbLabel(
+    slotKey: String,
+    repository: SlotRepository,
+    isLast: Boolean,
+    onClick: () -> Unit
+) {
+    val info by repository.getSlotInfo(slotKey).collectAsState(initial = SlotInfo())
+    Text(
+        text = info.label.ifEmpty { "?" },
+        fontSize = 20.sp,
+        fontWeight = if (isLast) FontWeight.Bold else FontWeight.Normal,
+        modifier = if (!isLast) Modifier.clickable { onClick() } else Modifier
+    )
 }
 
 @Composable
