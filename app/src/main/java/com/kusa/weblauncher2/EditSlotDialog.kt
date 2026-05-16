@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kusa.weblauncher2.data.IconType
@@ -32,10 +34,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.net.URL
 
 private val colorPalette = listOf(
-    "#F44336", "#E91E63", "#9C27B0", "#673AB7",
-    "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4",
-    "#009688", "#4CAF50", "#8BC34A", "#CDDC39",
-    "#FFEB3B", "#FFC107", "#FF9800", "#FF5722"
+    "#8B4513", "#5D4037", "#F44336", "#E91E63",
+    "#9C27B0", "#673AB7", "#3F51B5", "#2196F3",
+    "#03A9F4", "#00BCD4", "#009688", "#4CAF50",
+    "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107"
 )
 
 private fun makeColorIconBitmap(label: String, colorHex: String): Bitmap {
@@ -79,12 +81,11 @@ fun EditSlotDialog(
     if (initialInfo == null) return
 
     val scope = rememberCoroutineScope()
-    val isExistingSlot = initialInfo.label.isNotEmpty()
 
     var label     by remember(slotKey) { mutableStateOf(initialInfo.label) }
     var url       by remember(slotKey) { mutableStateOf(initialInfo.url) }
     var isSublink by remember(slotKey) { mutableStateOf(initialInfo.isSublink) }
-    var iconColor by remember(slotKey) { mutableStateOf(initialInfo.iconColor.ifEmpty { "#808080" }) }
+    var iconColor by remember(slotKey) { mutableStateOf(initialInfo.iconColor.ifEmpty { "#8B4513" }) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     var selectedIconType  by remember(slotKey) { mutableStateOf<IconType?>(
@@ -99,10 +100,12 @@ fun EditSlotDialog(
     }.collectAsState(initial = emptyList())
 
     val urlError = remember(url, isSublink) {
-        if (!isSublink && url.isNotEmpty() &&
-            !url.startsWith("http://") && !url.startsWith("https://"))
-            "http:// または https:// で始まるURLを入力してください"
-        else null
+        if (!isSublink && url.isNotEmpty() && !Patterns.WEB_URL.matcher(url).matches()) {
+            "URLの形式が正しくありません"
+        } else if (!isSublink && url.isNotEmpty() &&
+            !url.startsWith("http://") && !url.startsWith("https://")) {
+            "http:// または https:// で始まる必要があります"
+        } else null
     }
 
     val isDuplicateName = remember(label, siblings) {
@@ -121,18 +124,18 @@ fun EditSlotDialog(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("サブ画面の削除") },
-            text = { Text("このサブ画面と配下の登録がすべて削除されます。よろしいですか？") },
+            title = { Text(stringResource(R.string.dialog_title_delete)) },
+            text = { Text(stringResource(R.string.dialog_message_delete)) },
             confirmButton = {
                 Button(
                     onClick = { onDelete() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFD32F2F)
                     )
-                ) { Text("削除") }
+                ) { Text(stringResource(R.string.action_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("キャンセル") }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
         return
@@ -140,7 +143,7 @@ fun EditSlotDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("スロットの設定") },
+        title = { Text(stringResource(R.string.dialog_title_settings)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -149,14 +152,14 @@ fun EditSlotDialog(
                 TextField(
                     value = label,
                     onValueChange = { if (it.length <= 64) label = it },
-                    label = { Text("表示名") },
+                    label = { Text(stringResource(R.string.label_display_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     isError = isDuplicateName
                 )
                 if (isDuplicateName) {
                     Text(
-                        "同じ階層に同じ名前が既に存在します",
+                        stringResource(R.string.error_duplicate_name),
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -168,11 +171,11 @@ fun EditSlotDialog(
                         modifier = Modifier.clickable { isSublink = !isSublink }
                     ) {
                         Checkbox(checked = isSublink, onCheckedChange = { isSublink = it })
-                        Text("下の階層（サブ画面）へのリンクにする")
+                        Text(stringResource(R.string.checkbox_sublink))
                     }
                 } else {
                     Text(
-                        "※ 4階層目のためサブ画面への変更はできません",
+                        stringResource(R.string.error_max_depth),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
@@ -181,7 +184,7 @@ fun EditSlotDialog(
                 TextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text(if (isSublink) "アイコン取得用URL（任意）" else "URL") },
+                    label = { Text(stringResource(if (isSublink) R.string.label_favicon_url else R.string.label_url)) },
                     placeholder = { Text("https://...") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -195,7 +198,7 @@ fun EditSlotDialog(
                     )
                 }
 
-                Text("アイコン", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.label_icon), style = MaterialTheme.typography.labelMedium)
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -237,11 +240,11 @@ fun EditSlotDialog(
                                     modifier = Modifier.size(48.dp).clip(CircleShape)
                                 )
                             else ->
-                                Text("自動", fontSize = 11.sp, color = Color.DarkGray)
+                                Text(stringResource(R.string.icon_auto), fontSize = 11.sp, color = Color.DarkGray)
                         }
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("自動取得（URLのファビコン）", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.icon_auto_desc), style = MaterialTheme.typography.bodySmall)
                 }
 
                 LazyVerticalGrid(
@@ -285,44 +288,42 @@ fun EditSlotDialog(
                                 else IconType.COLOR to ""
                             }
                             IconType.COLOR -> {
-                                val bmp = makeColorIconBitmap(label.ifEmpty { "?" }, iconColor)
+                                val bmp = previewBitmap ?: makeColorIconBitmap(label.ifEmpty { "?" }, iconColor)
                                 IconType.COLOR to repository.bitmapToBase64(bmp)
                             }
                             else -> IconType.COLOR to ""
                         }
-                        val newInfo = initialInfo.copy(
-                            label = label,
-                            url = url,
-                            iconColor = iconColor,
-                            isSublink = isSublink,
-                            iconType = finalIconType,
-                            iconBase64 = finalBase64
+
+                        onSave(
+                            SlotInfo(
+                                label = label.trim(),
+                                url = url.trim(),
+                                isSublink = isSublink,
+                                iconColor = iconColor,
+                                iconType = finalIconType,
+                                iconBase64 = finalBase64
+                            )
                         )
-                        onSave(newInfo)
-                        onDismiss()
                     }
                 },
-                enabled = label.trim().isNotEmpty() && !isFetchingFavicon &&
-                          urlError == null && !isDuplicateName
+                enabled = label.isNotEmpty() && !isDuplicateName && urlError == null
             ) {
                 Text("保存")
             }
         },
         dismissButton = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isExistingSlot) {
+            Row {
+                if (initialInfo.label.isNotEmpty()) {
                     TextButton(
-                        onClick = {
-                            if (initialInfo.isSublink) showDeleteConfirm = true
-                            else onDelete()
-                        },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color(0xFFD32F2F)
-                        )
-                    ) { Text("削除") }
-                    Spacer(modifier = Modifier.weight(1f))
+                        onClick = { showDeleteConfirm = true },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    ) {
+                        Text(stringResource(R.string.action_delete))
+                    }
                 }
-                TextButton(onClick = onDismiss) { Text("キャンセル") }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         }
     )

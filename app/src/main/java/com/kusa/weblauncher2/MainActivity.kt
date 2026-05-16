@@ -23,9 +23,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.kusa.weblauncher2.data.SlotInfo
 import com.kusa.weblauncher2.data.SlotRepository
+import com.kusa.weblauncher2.ui.theme.TeaBackground
+import com.kusa.weblauncher2.ui.theme.TeaToolbar
 import com.kusa.weblauncher2.ui.theme.WebLauncher2Theme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,12 +45,12 @@ class MainActivity : ComponentActivity() {
             WebLauncher2Theme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = TeaBackground
                 ) {
                     SlotManagerScreen(
                         repository = repository,
                         initialSlot = initialSlot,
-                        onLaunchUrl = { info -> launchWithCustomTabs(info) }
+                        onLaunchUrl = { info -> launchWithCustomTabs(info, shouldFinish = false) }
                     )
                 }
             }
@@ -78,11 +81,11 @@ fun SlotManagerScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("🍵", fontSize = 24.sp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("あわ茶", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = androidx.compose.ui.graphics.Color(0xFFF5F5F0)
+                    containerColor = TeaBackground
                 )
             )
         }
@@ -91,13 +94,13 @@ fun SlotManagerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(androidx.compose.ui.graphics.Color(0xFFF5F5F0))
+                .background(TeaBackground)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .background(androidx.compose.ui.graphics.Color(0xFFEAEAE0))
+                    .background(TeaToolbar)
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -129,7 +132,7 @@ fun SlotManagerScreen(
                     TextButton(onClick = {
                         currentParentId = currentParentId.substringBeforeLast("_", "root")
                     }) {
-                        Text("←戻る", fontSize = 18.sp)
+                        Text(stringResource(R.string.back), fontSize = 18.sp)
                     }
                 }
             }
@@ -256,7 +259,7 @@ fun SlotItemRow(
                         Icon(imageVector = Icons.Default.Add, contentDescription = null)
                     else -> {
                         val colorInt = try {
-                            android.graphics.Color.parseColor(info?.iconColor ?: "#808080")
+                            android.graphics.Color.parseColor(info?.iconColor ?: "#8B4513")
                         } catch (e: Exception) { android.graphics.Color.GRAY }
                         Box(
                             modifier = Modifier
@@ -276,12 +279,12 @@ fun SlotItemRow(
 
             Column {
                 Text(
-                    text = if (isRegistered) info!!.label else "未登録 (${index + 1})",
+                    text = if (isRegistered) info!!.label else "",
                     style = MaterialTheme.typography.titleMedium
                 )
                 when {
                     isRegistered && info?.isSublink == true ->
-                        Text("📁 サブ画面", style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.sub_screen_indicator), style = MaterialTheme.typography.bodySmall,
                             color = androidx.compose.ui.graphics.Color.Gray)
                     isRegistered && info?.url?.isNotEmpty() == true ->
                         Text(info.url, style = MaterialTheme.typography.bodySmall,

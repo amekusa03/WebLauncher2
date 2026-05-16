@@ -1,3 +1,25 @@
 <resources>
-    <string name="app_name">らん茶</string>
+    <string name="app_name">あわ茶</string>
+    <string name="back">←戻る</string>
+    <string name="unregistered">スロット %1$d</string>
+    <string name="sub_screen_indicator">📁 サブ画面</string>
+    
+    <!-- Edit Dialog -->
+    <string name="dialog_title_settings">スロットの設定</string>
+    <string name="label_display_name">表示名</string>
+    <string name="error_duplicate_name">同じ階層に同じ名前が既に存在します</string>
+    <string name="checkbox_sublink">下の階層（サブ画面）へのリンクにする</string>
+    <string name="error_max_depth">※ 4階層目のためサブ画面への変更はできません</string>
+    <string name="label_favicon_url">アイコン取得用URL（任意）</string>
+    <string name="label_url">URL</string>
+    <string name="error_invalid_url">URLの形式が正しくありません</string>
+    <string name="label_icon">アイコン</string>
+    <string name="icon_auto">自動</string>
+    <string name="icon_auto_desc">自動取得（URLのファビコン）</string>
+    
+    <!-- Delete Dialog -->
+    <string name="dialog_title_delete">スロットの解除</string>
+    <string name="dialog_message_delete">スロットの設定を解除します。よろしいですか？\n（サブ画面の場合は配下の登録も削除されます）</string>
+    <string name="action_delete">解除</string>
+    <string name="action_cancel">キャンセル</string>
 </resources>
